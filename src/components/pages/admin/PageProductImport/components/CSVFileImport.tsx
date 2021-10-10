@@ -2,6 +2,9 @@ import React, {useState} from 'react';
 import {makeStyles} from '@material-ui/core/styles';
 import Typography from "@material-ui/core/Typography";
 import axios from 'axios';
+import {toast, ToastContainer} from 'react-toastify';
+
+import 'react-toastify/dist/ReactToastify.css';
 
 const useStyles = makeStyles((theme) => ({
   content: {
@@ -31,24 +34,50 @@ export default function CSVFileImport({url, title}: CSVFileImportProps) {
 
   const uploadFile = async (e: any) => {
       // Get the presigned URL
-      const response = await axios({
-        method: 'GET',
-        url,
-        params: {
-          name: encodeURIComponent(file.name)
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios({
+          method: 'GET',
+          headers: {
+            Authorization: `Basic ${token}`,
+          },
+          url,
+          params: {
+            name: encodeURIComponent(file.name)
+          }
+        })
+        console.log('File to upload: ', file.name)
+        console.log('Uploading to: ', response.data.url)
+        const result = await fetch(response.data.url, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'text/csv',
+          },
+          body: file
+        })
+        console.log('Result: ', result)
+        setFile('');
+      } catch (e) {
+        switch (e.status) {
+          case 401:
+            toast.error('Unauthorized', {
+              position: "bottom-left",
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+            });
+            break;
+          case 403:
+            toast.error('Access denied');
+            break;
+          default:
+            toast.error('Something gone wrong');
+            console.log(e);
         }
-      })
-      console.log('File to upload: ', file.name)
-      console.log('Uploading to: ', response.data.url)
-      const result = await fetch(response.data.url, {
-        method: 'PUT',
-        headers: {
-           'Content-Type': 'text/csv',
-        },
-        body: file
-      })
-      console.log('Result: ', result)
-      setFile('');
+      }
     }
   ;
 
@@ -65,6 +94,15 @@ export default function CSVFileImport({url, title}: CSVFileImportProps) {
           <button onClick={uploadFile}>Upload file</button>
         </div>
       )}
+      <ToastContainer position="bottom-left"
+                      autoClose={5000}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover/>
     </div>
   );
 }
