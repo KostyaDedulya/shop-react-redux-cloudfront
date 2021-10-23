@@ -21,6 +21,8 @@ axios.interceptors.response.use(
   }
 );
 
+localStorage.setItem('token', 'eW91ckdpcmh1Yk5hbWU6VEVTVF9QQVNTV09SRA==');
+
 ReactDOM.render(
   <React.StrictMode>
     <Provider store={store}>
